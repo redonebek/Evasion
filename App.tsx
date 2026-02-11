@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Calendar, Compass, Sparkles, ArrowLeft, Send, Sun, Moon, Map, Share2, Copy, Check, Link as LinkIcon } from 'lucide-react';
+import { MapPin, Calendar, Compass, Sparkles, ArrowLeft, Send, Sun, Moon, Map, Share2, Copy, Check, Link as LinkIcon, Info, Backpack, Wallet, Lightbulb, Utensils, FileText, ChevronRight } from 'lucide-react';
 import { generateItinerary } from './services/geminiService';
+import { exportToPdf } from './services/pdfService';
 import { Itinerary, PlannerFormData, TravelType } from './types';
 import { TRAVEL_TYPES, MIN_DAYS, MAX_DAYS } from './constants';
 import Input from './components/Input';
@@ -10,7 +11,7 @@ import DayCard from './components/DayCard';
 import LoadingView from './components/LoadingView';
 
 function App() {
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [formData, setFormData] = useState<PlannerFormData>({
     destination: '',
     days: 3,
@@ -21,6 +22,9 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
+  
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'itinerary' | 'essentials' | 'tips'>('itinerary');
 
   useEffect(() => {
     // Apply theme class to html element
@@ -59,7 +63,6 @@ function App() {
     };
     
     checkHash();
-    // Optional: listen to hashchange if you expect navigation within the same session
     window.addEventListener('hashchange', checkHash);
     return () => window.removeEventListener('hashchange', checkHash);
   }, []);
@@ -86,6 +89,7 @@ function App() {
     setError(null);
     setLoading(true);
     setItinerary(null);
+    setActiveTab('itinerary');
 
     try {
       const result = await generateItinerary(formData);
@@ -101,6 +105,7 @@ function App() {
     setItinerary(null);
     setFormData({ ...formData, destination: '' });
     setError(null);
+    setActiveTab('itinerary');
   };
 
   const showNotification = (msg: string) => {
@@ -129,6 +134,14 @@ function App() {
     let text = `🌍 Voyage à ${itinerary.destination}\n✨ ${itinerary.tripTitle}\n\n`;
     text += `${itinerary.summary}\n\n`;
     
+    // Add Practical Infos to copy
+    if (itinerary.practicalInfo) {
+       text += `💰 Budget: ${itinerary.practicalInfo.budgetEstimate}\n`;
+       if (itinerary.practicalInfo.localDishes && itinerary.practicalInfo.localDishes.length > 0) {
+         text += `🍽️ Spécialités: ${itinerary.practicalInfo.localDishes.join(', ')}\n\n`;
+       }
+    }
+
     itinerary.dailyPlans.forEach(day => {
         text += `📅 Jour ${day.day}: ${day.theme}\n`;
         day.activities.forEach(act => {
@@ -142,6 +155,12 @@ function App() {
     navigator.clipboard.writeText(text).then(() => {
         showNotification("Itinéraire copié en texte !");
     });
+  };
+
+  const handleExportPdf = () => {
+    if (!itinerary) return;
+    exportToPdf(itinerary);
+    showNotification("Téléchargement du PDF commencé !");
   };
 
   return (
@@ -159,10 +178,7 @@ function App() {
 
       {/* Dynamic Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        {/* Background Gradients */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50/50 to-white dark:from-[#0f172a] dark:via-[#1e1b4b] dark:to-[#0f172a] transition-colors duration-700"></div>
-        
-        {/* Animated Blobs */}
         <div className="absolute top-0 -left-4 w-96 h-96 bg-purple-300 dark:bg-purple-600 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[100px] opacity-40 dark:opacity-20 animate-blob"></div>
         <div className="absolute top-0 -right-4 w-96 h-96 bg-teal-300 dark:bg-teal-600 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[100px] opacity-40 dark:opacity-20 animate-blob animation-delay-2000"></div>
         <div className="absolute -bottom-32 left-20 w-96 h-96 bg-indigo-300 dark:bg-indigo-600 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[100px] opacity-40 dark:opacity-20 animate-blob animation-delay-4000"></div>
@@ -197,7 +213,7 @@ function App() {
               Planifiez votre<br/>prochaine aventure
             </h1>
             <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl max-w-2xl mx-auto animate-fade-in-down leading-relaxed" style={{animationDelay: '200ms'}}>
-              Laissez notre intelligence artificielle concevoir un voyage sur mesure, jour par jour, adapté à vos envies et votre style.
+              Laissez notre intelligence artificielle concevoir un voyage sur mesure, avec budget et conseils locaux.
             </p>
           </header>
         )}
@@ -294,22 +310,27 @@ function App() {
                   Retour à la recherche
                 </button>
 
-                <div className="flex gap-2 w-full sm:w-auto">
+                <div className="flex gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+                  <Button variant="secondary" onClick={handleExportPdf} className="flex-1 sm:flex-none !py-3 !px-5 text-sm">
+                     <span className="flex items-center justify-center gap-2 whitespace-nowrap">
+                      <FileText size={16} /> <span className="hidden sm:inline">PDF</span>
+                     </span>
+                  </Button>
                   <Button variant="secondary" onClick={handleCopyLink} className="flex-1 sm:flex-none !py-3 !px-5 text-sm">
-                     <span className="flex items-center justify-center gap-2">
+                     <span className="flex items-center justify-center gap-2 whitespace-nowrap">
                       <LinkIcon size={16} /> <span className="hidden sm:inline">Lien</span>
                      </span>
                   </Button>
                   <Button variant="secondary" onClick={handleCopyText} className="flex-1 sm:flex-none !py-3 !px-5 text-sm">
-                     <span className="flex items-center justify-center gap-2">
+                     <span className="flex items-center justify-center gap-2 whitespace-nowrap">
                        <Copy size={16} /> <span className="hidden sm:inline">Copier</span>
                      </span>
                   </Button>
                 </div>
               </div>
 
-              {/* Itinerary Header / Ticket Style */}
-              <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-slate-900 to-slate-800 dark:from-white/10 dark:to-white/5 p-8 md:p-12 mb-12 text-white shadow-2xl shadow-slate-900/20 animate-fade-in-up">
+              {/* Itinerary Header */}
+              <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-slate-900 to-slate-800 dark:from-white/10 dark:to-white/5 p-8 md:p-12 mb-8 text-white shadow-2xl shadow-slate-900/20 animate-fade-in-up">
                 <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-b from-teal-500/30 to-purple-500/30 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
                 
                 <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start justify-between">
@@ -324,25 +345,161 @@ function App() {
                        {itinerary.summary}
                      </p>
                   </div>
-                  <div className="flex md:flex-col gap-4 shrink-0 bg-white/5 p-4 rounded-2xl backdrop-blur-sm border border-white/10">
-                     <div className="text-center p-2">
-                        <span className="block text-sm text-slate-400 uppercase tracking-wider mb-1">Durée</span>
-                        <span className="text-2xl font-bold">{formData.days} Jours</span>
-                     </div>
-                     <div className="w-px h-12 md:w-full md:h-px bg-white/10"></div>
-                     <div className="text-center p-2">
-                        <span className="block text-sm text-slate-400 uppercase tracking-wider mb-1">Style</span>
-                        <span className="text-xl font-bold capitalize">{formData.type}</span>
-                     </div>
-                  </div>
                 </div>
               </div>
 
-              {/* Timeline List */}
-              <div className="space-y-2">
-                 {itinerary.dailyPlans.map((plan, index) => (
-                   <DayCard key={plan.day} plan={plan} index={index} />
-                 ))}
+              {/* Tabs Navigation */}
+              <div className="flex p-1 bg-white/40 dark:bg-black/20 backdrop-blur-md rounded-2xl mb-8 border border-white/20 overflow-x-auto">
+                <button 
+                  onClick={() => setActiveTab('itinerary')}
+                  className={`flex-1 min-w-[120px] py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-sm font-bold transition-all duration-300 ${activeTab === 'itinerary' ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/25' : 'text-slate-600 dark:text-slate-400 hover:bg-white/30 dark:hover:bg-white/5'}`}
+                >
+                  <Map size={16} />
+                  Itinéraire
+                </button>
+                <button 
+                  onClick={() => setActiveTab('essentials')}
+                  className={`flex-1 min-w-[120px] py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-sm font-bold transition-all duration-300 ${activeTab === 'essentials' ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/25' : 'text-slate-600 dark:text-slate-400 hover:bg-white/30 dark:hover:bg-white/5'}`}
+                >
+                  <Backpack size={16} />
+                  Valise & Budget
+                </button>
+                <button 
+                  onClick={() => setActiveTab('tips')}
+                  className={`flex-1 min-w-[120px] py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-sm font-bold transition-all duration-300 ${activeTab === 'tips' ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/25' : 'text-slate-600 dark:text-slate-400 hover:bg-white/30 dark:hover:bg-white/5'}`}
+                >
+                  <Lightbulb size={16} />
+                  Infos & Conseils
+                </button>
+              </div>
+
+              {/* Tab Content */}
+              <div className="animate-fade-in-up">
+                
+                {/* ITINERARY TAB */}
+                {activeTab === 'itinerary' && (
+                  <div className="space-y-2">
+                    {itinerary.dailyPlans.map((plan, index) => (
+                      <DayCard key={plan.day} plan={plan} index={index} />
+                    ))}
+                  </div>
+                )}
+
+                {/* ESSENTIALS TAB */}
+                {activeTab === 'essentials' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Packing List */}
+                    <div className="glass-panel rounded-[2rem] p-8 relative overflow-hidden">
+                       <div className="absolute top-0 right-0 p-4 opacity-5">
+                          <Backpack size={120} />
+                       </div>
+                       <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-slate-800 dark:text-white">
+                         <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                           <Backpack size={20} />
+                         </div>
+                         Valise Intelligente
+                       </h3>
+                       <ul className="space-y-3 relative z-10">
+                         {itinerary.packingList?.map((item, idx) => (
+                           <li key={idx} className="flex items-start gap-3 p-3 rounded-xl bg-white/50 dark:bg-white/5 border border-white/50 dark:border-white/5">
+                             <div className="w-5 h-5 rounded-full border-2 border-indigo-400 flex items-center justify-center mt-0.5">
+                               <div className="w-2.5 h-2.5 rounded-full bg-indigo-400"></div>
+                             </div>
+                             <span className="text-slate-700 dark:text-slate-200 font-medium">{item}</span>
+                           </li>
+                         )) || <p>Aucune liste disponible.</p>}
+                       </ul>
+                    </div>
+
+                    {/* Budget & Money */}
+                    <div className="glass-panel rounded-[2rem] p-8 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-4 opacity-5">
+                          <Wallet size={120} />
+                       </div>
+                       <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-slate-800 dark:text-white">
+                         <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                           <Wallet size={20} />
+                         </div>
+                         Budget & Monnaie
+                       </h3>
+                       <div className="space-y-6 relative z-10">
+                         <div className="p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-500/20">
+                           <span className="block text-sm text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider mb-1">Estimation Journalière</span>
+                           <span className="text-3xl font-bold text-slate-800 dark:text-white">{itinerary.practicalInfo?.budgetEstimate || "N/A"}</span>
+                           <p className="text-xs text-slate-500 mt-1">Par personne (hors vols)</p>
+                         </div>
+                         
+                         <div className="flex items-center gap-4">
+                           <div className="flex-1 p-4 rounded-2xl bg-white/50 dark:bg-white/5 border border-white/50 dark:border-white/5">
+                              <span className="block text-xs text-slate-500 uppercase tracking-wider mb-1">Devise</span>
+                              <span className="text-lg font-bold text-slate-800 dark:text-white">{itinerary.practicalInfo?.currency || "N/A"}</span>
+                           </div>
+                         </div>
+                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TIPS TAB */}
+                {activeTab === 'tips' && (
+                  <div className="space-y-6">
+                    {/* Local Tips */}
+                    <div className="glass-panel rounded-[2rem] p-8">
+                      <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-slate-800 dark:text-white">
+                         <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                           <Lightbulb size={20} />
+                         </div>
+                         Conseils Locaux
+                       </h3>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         {itinerary.localTips?.map((tip, idx) => (
+                           <div key={idx} className="p-4 rounded-2xl bg-amber-50/50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-500/10 flex gap-3">
+                             <Info className="shrink-0 text-amber-500 mt-1" size={18} />
+                             <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed">{tip}</p>
+                           </div>
+                         )) || <p>Aucun conseil disponible.</p>}
+                       </div>
+                    </div>
+
+                    {/* Food & Weather */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <div className="glass-panel rounded-[2rem] p-6 flex flex-col items-start gap-4">
+                          <div className="flex items-center gap-4">
+                             <div className="w-12 h-12 rounded-2xl bg-orange-100 dark:bg-orange-900/30 text-orange-500 flex items-center justify-center shrink-0">
+                                <Utensils size={24} />
+                             </div>
+                             <h4 className="font-bold text-lg text-slate-800 dark:text-white">À goûter absolument</h4>
+                          </div>
+                          
+                          <div className="w-full mt-2">
+                             {itinerary.practicalInfo?.localDishes && itinerary.practicalInfo.localDishes.length > 0 ? (
+                               <ul className="space-y-3">
+                                 {itinerary.practicalInfo.localDishes.map((dish, idx) => (
+                                   <li key={idx} className="flex items-start gap-3 p-3 rounded-xl bg-orange-50/50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-500/10">
+                                      <div className="mt-1 w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0"></div>
+                                      <span className="text-slate-600 dark:text-slate-300 italic text-sm">{dish}</span>
+                                   </li>
+                                 ))}
+                               </ul>
+                             ) : (
+                               <p className="text-slate-600 dark:text-slate-300 italic">"Spécialité locale"</p>
+                             )}
+                          </div>
+                       </div>
+
+                       <div className="glass-panel rounded-[2rem] p-6 flex items-start gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-sky-100 dark:bg-sky-900/30 text-sky-500 flex items-center justify-center shrink-0">
+                             <Sun size={24} />
+                          </div>
+                          <div>
+                             <h4 className="font-bold text-lg text-slate-800 dark:text-white mb-1">Météo & Saison</h4>
+                             <p className="text-slate-600 dark:text-slate-300">{itinerary.practicalInfo?.weatherTip || "Vérifiez la météo avant de partir"}</p>
+                          </div>
+                       </div>
+                    </div>
+                  </div>
+                )}
+
               </div>
               
               <div className="mt-16 text-center pb-8 border-t border-slate-200 dark:border-slate-800 pt-8">

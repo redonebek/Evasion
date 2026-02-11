@@ -9,13 +9,20 @@ export const generateItinerary = async (formData: PlannerFormData): Promise<Itin
   const { destination, days, type } = formData;
 
   const prompt = `
-    Crée un itinéraire de voyage complet et détaillé pour des vacances à ${destination}.
+    Agis comme un expert en voyage local. Crée un guide de voyage complet pour ${destination}.
     Durée: ${days} jours.
-    Style de voyage: ${type}.
+    Style: ${type}.
     Langue: Français.
     
-    L'itinéraire doit être réaliste, inclure des activités spécifiques au lieu, et respecter le style de voyage demandé.
-    Inclus un titre accrocheur et un résumé inspirant.
+    Je veux:
+    1. Un itinéraire jour par jour détaillé.
+       IMPORTANT : Pour chaque jour, tu DOIS inclure des suggestions spécifiques pour le déjeuner et le dîner dans les activités.
+       Pour ces repas :
+       - Mentionne des plats typiques ou gastronomiques de la région.
+       - Recommande un restaurant spécifique (nom réel) ou un endroit précis (quartier, type d'établissement) pour déguster ces spécialités.
+    2. Une liste intelligente de 5 à 7 objets indispensables à mettre dans la valise pour cette destination spécifique.
+    3. Des conseils locaux (coutumes, pièges à éviter).
+    4. Des infos pratiques (budget estimé par jour, liste de 3 à 5 spécialités culinaires locales incontournables).
   `;
 
   try {
@@ -27,24 +34,23 @@ export const generateItinerary = async (formData: PlannerFormData): Promise<Itin
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            tripTitle: { type: Type.STRING, description: "Un titre évocateur pour le voyage" },
-            summary: { type: Type.STRING, description: "Un résumé inspirant de l'ambiance du voyage" },
-            destination: { type: Type.STRING, description: "La ville ou le pays de destination" },
+            tripTitle: { type: Type.STRING, description: "Titre évocateur" },
+            summary: { type: Type.STRING, description: "Résumé inspirant" },
+            destination: { type: Type.STRING },
             dailyPlans: {
               type: Type.ARRAY,
-              description: "Liste des plans journaliers",
               items: {
                 type: Type.OBJECT,
                 properties: {
-                  day: { type: Type.INTEGER, description: "Numéro du jour" },
-                  theme: { type: Type.STRING, description: "Thème principal de la journée" },
+                  day: { type: Type.INTEGER },
+                  theme: { type: Type.STRING },
                   activities: {
                     type: Type.ARRAY,
                     items: {
                       type: Type.OBJECT,
                       properties: {
-                        time: { type: Type.STRING, description: "Moment de la journée (Matin, Midi, Après-midi, Soir)" },
-                        description: { type: Type.STRING, description: "Description détaillée de l'activité" }
+                        time: { type: Type.STRING },
+                        description: { type: Type.STRING }
                       },
                       required: ["time", "description"]
                     }
@@ -52,9 +58,33 @@ export const generateItinerary = async (formData: PlannerFormData): Promise<Itin
                 },
                 required: ["day", "theme", "activities"]
               }
+            },
+            packingList: {
+              type: Type.ARRAY,
+              description: "Liste de 5-7 objets spécifiques à emporter",
+              items: { type: Type.STRING }
+            },
+            localTips: {
+              type: Type.ARRAY,
+              description: "3-4 conseils culturels ou pratiques",
+              items: { type: Type.STRING }
+            },
+            practicalInfo: {
+              type: Type.OBJECT,
+              properties: {
+                currency: { type: Type.STRING, description: "Devise locale (ex: Yen, Euro)" },
+                budgetEstimate: { type: Type.STRING, description: "Estimation budget journalier moyen par personne (hors vol)" },
+                weatherTip: { type: Type.STRING, description: "Conseil météo bref" },
+                localDishes: { 
+                  type: Type.ARRAY, 
+                  description: "Liste de 3 à 5 plats typiques à goûter",
+                  items: { type: Type.STRING }
+                }
+              },
+              required: ["currency", "budgetEstimate", "weatherTip", "localDishes"]
             }
           },
-          required: ["tripTitle", "summary", "destination", "dailyPlans"]
+          required: ["tripTitle", "summary", "destination", "dailyPlans", "packingList", "localTips", "practicalInfo"]
         }
       }
     });

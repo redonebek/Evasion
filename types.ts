@@ -18,11 +18,21 @@ export interface DayPlan {
   activities: Activity[];
 }
 
+export interface PracticalInfo {
+  currency: string;
+  budgetEstimate: string; // e.g. "100-150€ par jour"
+  weatherTip: string;
+  localDishes: string[]; // Changed from single string to array
+}
+
 export interface Itinerary {
   tripTitle: string;
   summary: string;
   destination: string;
   dailyPlans: DayPlan[];
+  packingList: string[];
+  localTips: string[];
+  practicalInfo: PracticalInfo;
 }
 
 export interface PlannerFormData {

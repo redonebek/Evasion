@@ -9,5 +9,5 @@ export const TRAVEL_TYPES = [
   { value: TravelType.FAMILY, label: '👨‍👩‍👧‍👦 Famille', color: 'text-blue-400' },
 ];
 
-export const MAX_DAYS = 14;
+export const MAX_DAYS = 21;
 export const MIN_DAYS = 1;
