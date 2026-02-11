@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Calendar, Compass, Sparkles, ArrowLeft, Send, Sun, Moon, Map, Share2, Copy, Check, Link as LinkIcon, Info, Backpack, Wallet, Lightbulb, Utensils, FileText, ChevronRight } from 'lucide-react';
+import { MapPin, Calendar, Compass, Sparkles, ArrowLeft, Send, Sun, Moon, Map, Share2, Copy, Check, Link as LinkIcon, Info, Backpack, Wallet, Lightbulb, Utensils, FileText, ChevronRight, BedDouble, Star, Landmark, Ticket } from 'lucide-react';
 import { generateItinerary } from './services/geminiService';
 import { exportToPdf } from './services/pdfService';
 import { Itinerary, PlannerFormData, TravelType } from './types';
@@ -161,6 +161,14 @@ function App() {
     if (!itinerary) return;
     exportToPdf(itinerary);
     showNotification("Téléchargement du PDF commencé !");
+  };
+
+  const getCategoryColor = (category: string) => {
+    const lower = category.toLowerCase();
+    if (lower.includes('luxe')) return "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-200 border-yellow-200 dark:border-yellow-700/50";
+    if (lower.includes('confort') || lower.includes('qualité')) return "bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-200 border-teal-200 dark:border-teal-700/50";
+    if (lower.includes('budget') || lower.includes('economique')) return "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-blue-700/50";
+    return "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300";
   };
 
   return (
@@ -443,6 +451,75 @@ function App() {
                 {/* TIPS TAB */}
                 {activeTab === 'tips' && (
                   <div className="space-y-6">
+                    
+                    {/* Must-See Historical Sites */}
+                    <div className="glass-panel rounded-[2rem] p-8 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-4 opacity-5">
+                        <Landmark size={120} />
+                      </div>
+                      <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-slate-800 dark:text-white">
+                        <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+                          <Landmark size={20} />
+                        </div>
+                        Sites Incontournables
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
+                        {itinerary.historicalSites?.map((site, idx) => (
+                          <div key={idx} className="flex flex-col p-5 rounded-2xl bg-white/50 dark:bg-white/5 border border-white/50 dark:border-white/10 hover:border-rose-300 dark:hover:border-rose-500/30 transition-all duration-300 group">
+                            <div className="flex justify-between items-start mb-2">
+                               <h4 className="text-lg font-bold text-slate-800 dark:text-white leading-tight">
+                                {site.name}
+                              </h4>
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300 text-xs font-bold whitespace-nowrap border border-rose-100 dark:border-rose-800/50">
+                                <Ticket size={12} /> {site.ticketPrice}
+                              </span>
+                            </div>
+                            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                              {site.description}
+                            </p>
+                          </div>
+                        )) || (
+                          <div className="col-span-2 text-center text-slate-500 italic">
+                            Aucun site historique disponible.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Hotel Recommendations Section */}
+                    <div className="glass-panel rounded-[2rem] p-8 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-4 opacity-5">
+                        <BedDouble size={120} />
+                      </div>
+                      <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-slate-800 dark:text-white">
+                        <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                          <BedDouble size={20} />
+                        </div>
+                        Hébergements Recommandés
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 relative z-10">
+                        {itinerary.hotelRecommendations?.map((hotel, idx) => (
+                          <div key={idx} className="flex flex-col p-5 rounded-2xl bg-white/50 dark:bg-white/5 border border-white/50 dark:border-white/10 hover:border-purple-300 dark:hover:border-purple-500/30 transition-all duration-300 group">
+                            <div className="mb-3">
+                              <span className={`inline-block px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider border ${getCategoryColor(hotel.category)}`}>
+                                {hotel.category}
+                              </span>
+                            </div>
+                            <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-2 leading-tight">
+                              {hotel.name}
+                            </h4>
+                            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                              {hotel.description}
+                            </p>
+                          </div>
+                        )) || (
+                          <div className="col-span-3 text-center text-slate-500 italic">
+                            Aucune recommandation d'hôtel disponible.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                     {/* Local Tips */}
                     <div className="glass-panel rounded-[2rem] p-8">
                       <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-slate-800 dark:text-white">

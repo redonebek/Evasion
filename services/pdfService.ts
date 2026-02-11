@@ -118,6 +118,72 @@ export const exportToPdf = (itinerary: Itinerary) => {
   
   y += 10;
 
+  // --- Historical Sites ---
+  if (itinerary.historicalSites && itinerary.historicalSites.length > 0) {
+    checkPageBreak(60);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.text("Sites Historiques Incontournables", margin, y);
+    y += 8;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    
+    itinerary.historicalSites.forEach(site => {
+      // Site Name & Price
+      const nameStr = `• ${site.name} (${site.ticketPrice})`;
+      
+      // Description
+      const descLines = doc.splitTextToSize(site.description, contentWidth - 10);
+      const totalHeight = 5 + (descLines.length * 5) + 4;
+
+      checkPageBreak(totalHeight);
+
+      doc.setFont("helvetica", "bold");
+      doc.text(nameStr, margin + 5, y);
+      y += 5;
+      
+      doc.setFont("helvetica", "normal");
+      doc.text(descLines, margin + 10, y);
+      y += descLines.length * 5 + 4;
+    });
+    y += 4;
+  }
+
+  // --- Hotels ---
+  if (itinerary.hotelRecommendations && itinerary.hotelRecommendations.length > 0) {
+    checkPageBreak(60);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.text("Hôtels Recommandés", margin, y);
+    y += 8;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    
+    itinerary.hotelRecommendations.forEach(hotel => {
+      // Name & Category
+      const nameStr = `• ${hotel.name} (${hotel.category})`;
+      
+      // Description
+      const descLines = doc.splitTextToSize(hotel.description, contentWidth - 10);
+      const totalHeight = 5 + (descLines.length * 5) + 4;
+
+      checkPageBreak(totalHeight);
+
+      doc.setFont("helvetica", "bold");
+      doc.text(nameStr, margin + 5, y);
+      y += 5;
+      
+      doc.setFont("helvetica", "normal");
+      doc.text(descLines, margin + 10, y);
+      y += descLines.length * 5 + 4;
+    });
+    y += 4;
+  }
+
   // --- Packing List ---
   checkPageBreak(60);
   doc.setFont("helvetica", "bold");

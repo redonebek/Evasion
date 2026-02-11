@@ -22,7 +22,13 @@ export const generateItinerary = async (formData: PlannerFormData): Promise<Itin
        - Recommande un restaurant spécifique (nom réel) ou un endroit précis (quartier, type d'établissement) pour déguster ces spécialités.
     2. Une liste intelligente de 5 à 7 objets indispensables à mettre dans la valise pour cette destination spécifique.
     3. Des conseils locaux (coutumes, pièges à éviter).
-    4. Des infos pratiques (budget estimé par jour, liste de 3 à 5 spécialités culinaires locales incontournables).
+    4. 9 Recommandations d'hébergement réparties strictement en 3 catégories :
+       - 3 options "Luxe" (Haut de gamme, charme exceptionnel)
+       - 3 options "Confort" (Bon rapport qualité/prix, bien situé)
+       - 3 options "Budget" (Économique, auberge, capsule)
+       Groupe les résultats dans cet ordre : Luxe, puis Confort, puis Budget.
+    5. Une liste de 4 sites historiques ou culturels incontournables (monuments, musées, lieux emblématiques) avec le prix approximatif du billet (ou "Gratuit").
+    6. Des infos pratiques (budget estimé par jour, liste de 3 à 5 spécialités culinaires locales incontournables).
   `;
 
   try {
@@ -69,6 +75,32 @@ export const generateItinerary = async (formData: PlannerFormData): Promise<Itin
               description: "3-4 conseils culturels ou pratiques",
               items: { type: Type.STRING }
             },
+            hotelRecommendations: {
+              type: Type.ARRAY,
+              description: "Liste de 9 hôtels (3 par catégorie: Luxe, Confort, Budget)",
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  name: { type: Type.STRING, description: "Nom de l'hôtel ou du quartier" },
+                  category: { type: Type.STRING, description: "Doit être 'Luxe', 'Confort' ou 'Budget'" },
+                  description: { type: Type.STRING, description: "Pourquoi choisir cet endroit" }
+                },
+                required: ["name", "category", "description"]
+              }
+            },
+            historicalSites: {
+              type: Type.ARRAY,
+              description: "4 sites incontournables",
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  name: { type: Type.STRING, description: "Nom du site" },
+                  description: { type: Type.STRING, description: "Bref descriptif historique/culturel" },
+                  ticketPrice: { type: Type.STRING, description: "Prix approx (ex: 12€ ou Gratuit)" }
+                },
+                required: ["name", "description", "ticketPrice"]
+              }
+            },
             practicalInfo: {
               type: Type.OBJECT,
               properties: {
@@ -84,7 +116,7 @@ export const generateItinerary = async (formData: PlannerFormData): Promise<Itin
               required: ["currency", "budgetEstimate", "weatherTip", "localDishes"]
             }
           },
-          required: ["tripTitle", "summary", "destination", "dailyPlans", "packingList", "localTips", "practicalInfo"]
+          required: ["tripTitle", "summary", "destination", "dailyPlans", "packingList", "localTips", "hotelRecommendations", "historicalSites", "practicalInfo"]
         }
       }
     });

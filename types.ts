@@ -18,6 +18,18 @@ export interface DayPlan {
   activities: Activity[];
 }
 
+export interface Hotel {
+  name: string;
+  category: string; // e.g. "Luxe", "Charme", "Economique"
+  description: string;
+}
+
+export interface HistoricalSite {
+  name: string;
+  description: string;
+  ticketPrice: string; // e.g. "15€" or "Gratuit"
+}
+
 export interface PracticalInfo {
   currency: string;
   budgetEstimate: string; // e.g. "100-150€ par jour"
@@ -32,6 +44,8 @@ export interface Itinerary {
   dailyPlans: DayPlan[];
   packingList: string[];
   localTips: string[];
+  hotelRecommendations: Hotel[];
+  historicalSites: HistoricalSite[];
   practicalInfo: PracticalInfo;
 }
 
