@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Calendar, Compass, Sparkles, ArrowLeft, Send, Sun, Moon, Map } from 'lucide-react';
+import { MapPin, Calendar, Compass, Sparkles, ArrowLeft, Send, Sun, Moon, Map, Share2, Copy, Check, Link as LinkIcon } from 'lucide-react';
 import { generateItinerary } from './services/geminiService';
 import { Itinerary, PlannerFormData, TravelType } from './types';
 import { TRAVEL_TYPES, MIN_DAYS, MAX_DAYS } from './constants';
@@ -20,6 +20,7 @@ function App() {
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notification, setNotification] = useState<string | null>(null);
 
   useEffect(() => {
     // Apply theme class to html element
@@ -29,6 +30,39 @@ function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [isDarkMode]);
+
+  useEffect(() => {
+    const checkHash = () => {
+      if (window.location.hash.startsWith('#share=')) {
+        try {
+          const encoded = window.location.hash.substring(7); // remove #share=
+          // Decode Base64 with Unicode support
+          const json = decodeURIComponent(escape(window.atob(encoded)));
+          const sharedItinerary = JSON.parse(json);
+          
+          if (sharedItinerary && sharedItinerary.dailyPlans) {
+            setItinerary(sharedItinerary);
+            setFormData(prev => ({
+              ...prev,
+              destination: sharedItinerary.destination,
+              days: sharedItinerary.dailyPlans.length,
+            }));
+            // Remove hash to clean URL without reloading
+            history.pushState("", document.title, window.location.pathname + window.location.search);
+            showNotification("Itinéraire chargé depuis le lien partagé !");
+          }
+        } catch (e) {
+          console.error("Error parsing share link", e);
+          setError("Le lien partagé semble invalide ou a expiré.");
+        }
+      }
+    };
+    
+    checkHash();
+    // Optional: listen to hashchange if you expect navigation within the same session
+    window.addEventListener('hashchange', checkHash);
+    return () => window.removeEventListener('hashchange', checkHash);
+  }, []);
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
@@ -66,11 +100,63 @@ function App() {
   const reset = () => {
     setItinerary(null);
     setFormData({ ...formData, destination: '' });
+    setError(null);
+  };
+
+  const showNotification = (msg: string) => {
+    setNotification(msg);
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  const handleCopyLink = () => {
+    if (!itinerary) return;
+    try {
+      const json = JSON.stringify(itinerary);
+      // Encode Base64 with Unicode support
+      const encoded = window.btoa(unescape(encodeURIComponent(json)));
+      const url = `${window.location.origin}${window.location.pathname}#share=${encoded}`;
+      navigator.clipboard.writeText(url).then(() => {
+        showNotification("Lien copié ! Partagez votre voyage.");
+      });
+    } catch (e) {
+      console.error("Encoding error", e);
+      showNotification("Erreur lors de la création du lien.");
+    }
+  };
+
+  const handleCopyText = () => {
+    if (!itinerary) return;
+    let text = `🌍 Voyage à ${itinerary.destination}\n✨ ${itinerary.tripTitle}\n\n`;
+    text += `${itinerary.summary}\n\n`;
+    
+    itinerary.dailyPlans.forEach(day => {
+        text += `📅 Jour ${day.day}: ${day.theme}\n`;
+        day.activities.forEach(act => {
+            text += `• ${act.time}: ${act.description}\n`;
+        });
+        text += `\n`;
+    });
+    
+    text += `Généré par Évasion`;
+    
+    navigator.clipboard.writeText(text).then(() => {
+        showNotification("Itinéraire copié en texte !");
+    });
   };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50 selection:bg-teal-500/30 selection:text-teal-700 dark:selection:text-teal-200 overflow-x-hidden transition-colors duration-500">
       
+      {/* Toast Notification */}
+      {notification && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in-down">
+          <div className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-3 rounded-full shadow-xl flex items-center gap-3 font-medium">
+            <Check size={18} className="text-teal-500" />
+            {notification}
+          </div>
+        </div>
+      )}
+
       {/* Dynamic Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         {/* Background Gradients */}
@@ -199,7 +285,7 @@ function App() {
 
           {itinerary && (
             <div className="animate-fade-in max-w-4xl mx-auto">
-              <div className="mb-8">
+              <div className="mb-8 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
                 <button 
                   onClick={reset}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/10 transition-all duration-300 group font-medium"
@@ -207,6 +293,19 @@ function App() {
                   <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
                   Retour à la recherche
                 </button>
+
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <Button variant="secondary" onClick={handleCopyLink} className="flex-1 sm:flex-none !py-3 !px-5 text-sm">
+                     <span className="flex items-center justify-center gap-2">
+                      <LinkIcon size={16} /> <span className="hidden sm:inline">Lien</span>
+                     </span>
+                  </Button>
+                  <Button variant="secondary" onClick={handleCopyText} className="flex-1 sm:flex-none !py-3 !px-5 text-sm">
+                     <span className="flex items-center justify-center gap-2">
+                       <Copy size={16} /> <span className="hidden sm:inline">Copier</span>
+                     </span>
+                  </Button>
+                </div>
               </div>
 
               {/* Itinerary Header / Ticket Style */}
