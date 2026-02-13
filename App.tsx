@@ -25,6 +25,9 @@ function App() {
   
   // Tab state
   const [activeTab, setActiveTab] = useState<'itinerary' | 'essentials' | 'tips'>('itinerary');
+  
+  // Filter state for hotels
+  const [hotelFilter, setHotelFilter] = useState<string>('all');
 
   useEffect(() => {
     // Apply theme class to html element
@@ -90,6 +93,7 @@ function App() {
     setLoading(true);
     setItinerary(null);
     setActiveTab('itinerary');
+    setHotelFilter('all');
 
     try {
       const result = await generateItinerary(formData);
@@ -106,6 +110,7 @@ function App() {
     setFormData({ ...formData, destination: '' });
     setError(null);
     setActiveTab('itinerary');
+    setHotelFilter('all');
   };
 
   const showNotification = (msg: string) => {
@@ -491,15 +496,38 @@ function App() {
                       <div className="absolute top-0 right-0 p-4 opacity-5">
                         <BedDouble size={120} />
                       </div>
-                      <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-slate-800 dark:text-white">
-                        <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-                          <BedDouble size={20} />
+                      
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 relative z-10">
+                        <h3 className="text-2xl font-bold flex items-center gap-3 text-slate-800 dark:text-white">
+                          <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                            <BedDouble size={20} />
+                          </div>
+                          Hébergements
+                        </h3>
+                        
+                        {/* Filter Buttons */}
+                        <div className="flex bg-white/40 dark:bg-white/5 p-1 rounded-xl backdrop-blur-sm border border-white/20 overflow-x-auto max-w-full">
+                          {['all', 'Luxe', 'Confort', 'Budget'].map((filter) => (
+                            <button
+                              key={filter}
+                              onClick={() => setHotelFilter(filter)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 whitespace-nowrap ${
+                                hotelFilter === filter
+                                  ? 'bg-purple-500 text-white shadow-md shadow-purple-500/20'
+                                  : 'text-slate-600 dark:text-slate-400 hover:bg-white/40 dark:hover:bg-white/10'
+                              }`}
+                            >
+                              {filter === 'all' ? 'Tous' : filter}
+                            </button>
+                          ))}
                         </div>
-                        Hébergements Recommandés
-                      </h3>
+                      </div>
+
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 relative z-10">
-                        {itinerary.hotelRecommendations?.map((hotel, idx) => (
-                          <div key={idx} className="flex flex-col p-5 rounded-2xl bg-white/50 dark:bg-white/5 border border-white/50 dark:border-white/10 hover:border-purple-300 dark:hover:border-purple-500/30 transition-all duration-300 group">
+                        {itinerary.hotelRecommendations
+                          ?.filter(h => hotelFilter === 'all' || h.category.toLowerCase().includes(hotelFilter.toLowerCase()))
+                          .map((hotel, idx) => (
+                          <div key={idx} className="flex flex-col p-5 rounded-2xl bg-white/50 dark:bg-white/5 border border-white/50 dark:border-white/10 hover:border-purple-300 dark:hover:border-purple-500/30 transition-all duration-300 group animate-fade-in-up" style={{animationDelay: `${idx * 50}ms`}}>
                             <div className="mb-3">
                               <span className={`inline-block px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider border ${getCategoryColor(hotel.category)}`}>
                                 {hotel.category}
@@ -512,9 +540,12 @@ function App() {
                               {hotel.description}
                             </p>
                           </div>
-                        )) || (
-                          <div className="col-span-3 text-center text-slate-500 italic">
-                            Aucune recommandation d'hôtel disponible.
+                        ))}
+                        {(!itinerary.hotelRecommendations || itinerary.hotelRecommendations.length === 0 || 
+                           (itinerary.hotelRecommendations.filter(h => hotelFilter === 'all' || h.category.toLowerCase().includes(hotelFilter.toLowerCase())).length === 0)
+                        ) && (
+                          <div className="col-span-3 text-center text-slate-500 italic py-8">
+                            Aucun hébergement trouvé pour cette catégorie.
                           </div>
                         )}
                       </div>
