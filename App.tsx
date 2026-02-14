@@ -27,7 +27,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<'itinerary' | 'essentials' | 'tips'>('itinerary');
   
   // Filter state for hotels
-  const [hotelFilter, setHotelFilter] = useState<string>('all');
+  const [hotelFilter, setHotelFilter] = useState<string>('Confort');
 
   useEffect(() => {
     // Apply theme class to html element
@@ -93,7 +93,7 @@ function App() {
     setLoading(true);
     setItinerary(null);
     setActiveTab('itinerary');
-    setHotelFilter('all');
+    setHotelFilter('Confort');
 
     try {
       const result = await generateItinerary(formData);
@@ -110,7 +110,7 @@ function App() {
     setFormData({ ...formData, destination: '' });
     setError(null);
     setActiveTab('itinerary');
-    setHotelFilter('all');
+    setHotelFilter('Confort');
   };
 
   const showNotification = (msg: string) => {
@@ -507,7 +507,7 @@ function App() {
                         
                         {/* Filter Buttons */}
                         <div className="flex bg-white/40 dark:bg-white/5 p-1 rounded-xl backdrop-blur-sm border border-white/20 overflow-x-auto max-w-full">
-                          {['all', 'Luxe', 'Confort', 'Budget'].map((filter) => (
+                          {['Luxe', 'Confort', 'Budget'].map((filter) => (
                             <button
                               key={filter}
                               onClick={() => setHotelFilter(filter)}
@@ -517,7 +517,7 @@ function App() {
                                   : 'text-slate-600 dark:text-slate-400 hover:bg-white/40 dark:hover:bg-white/10'
                               }`}
                             >
-                              {filter === 'all' ? 'Tous' : filter}
+                              {filter}
                             </button>
                           ))}
                         </div>
@@ -525,7 +525,7 @@ function App() {
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 relative z-10">
                         {itinerary.hotelRecommendations
-                          ?.filter(h => hotelFilter === 'all' || h.category.toLowerCase().includes(hotelFilter.toLowerCase()))
+                          ?.filter(h => h.category.toLowerCase().includes(hotelFilter.toLowerCase()))
                           .map((hotel, idx) => (
                           <div key={idx} className="flex flex-col p-5 rounded-2xl bg-white/50 dark:bg-white/5 border border-white/50 dark:border-white/10 hover:border-purple-300 dark:hover:border-purple-500/30 transition-all duration-300 group animate-fade-in-up" style={{animationDelay: `${idx * 50}ms`}}>
                             <div className="mb-3">
@@ -542,7 +542,7 @@ function App() {
                           </div>
                         ))}
                         {(!itinerary.hotelRecommendations || itinerary.hotelRecommendations.length === 0 || 
-                           (itinerary.hotelRecommendations.filter(h => hotelFilter === 'all' || h.category.toLowerCase().includes(hotelFilter.toLowerCase())).length === 0)
+                           (itinerary.hotelRecommendations.filter(h => h.category.toLowerCase().includes(hotelFilter.toLowerCase())).length === 0)
                         ) && (
                           <div className="col-span-3 text-center text-slate-500 italic py-8">
                             Aucun hébergement trouvé pour cette catégorie.
